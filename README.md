@@ -65,5 +65,5 @@ We employed seven distinct spatial omics datasets to evaluate model performance:
 ### 7. Mouse Embryo Chromatin Accessibility
 - **Technology**: Spatial ATAC  
 - **Stages**: E12.5, E13.5, E15.5
-- **Coverage**: Embryo sagittal sections
+- **Coverage**: Embryo sagittal sections <br />
 Seven datasets can be downloaded from https://pan.baidu.com/s/1mmMWKz-GaHqvjTQ-fZ1IZA?pwd=1234
