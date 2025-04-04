@@ -46,24 +46,24 @@ We employed seven distinct spatial omics datasets to evaluate model performance:
 
 ### 3. Mouse Brain Spatial CUT&Tag-RNA-seq
 - **Modalities**:
-  - RNA + H3K27ac modification
-  - RNA + H3K4me3 modification 
+  - S1: RNA + H3K27ac modification
+  - S2: RNA + H3K4me3 modification 
 
 ### 4. Human Tonsil Multi-omics
 - **Technology**: Spatial-CITE-seq
-- **Modalities**: Transcriptome + 20 protein markers
+- **Modalities**: Transcriptome + proteome
 
 ### 5. Mouse Breast Cancer Multi-omics  
 - **Technology**: SPOTS
-- **Modalities**: Transcriptome + 77 protein markers
+- **Modalities**: Transcriptome + protome
 
 ### 6. Mouse Embryo Transcriptome
 - **Technology**: Stereo-seq
 - **Stages**: E9.5, E10.5, E11.5
 - **Coverage**: Whole embryo sagittal sections
 
-### 7. Mouse Embryo Chromatin
+### 7. Mouse Embryo Chromatin Accessibility
 - **Technology**: Spatial ATAC  
 - **Stages**: E12.5, E13.5, E14.5
-- **Coverage**: Forebrain regions
+- **Coverage**: Embryo sagittal sections
 Seven datasets can be downloaded from https://pan.baidu.com/s/1mmMWKz-GaHqvjTQ-fZ1IZA?pwd=1234
