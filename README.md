@@ -9,7 +9,7 @@ pytorch==1.12.0+cu11.3 <br />
 pytorch_geometric==2.4.0 <br />
 mclust==5.4.10 <br />
 
-## set up
+## Set up
 
 First clone the repository. 
 ```
@@ -66,4 +66,4 @@ We employed seven distinct spatial omics datasets to evaluate model performance:
 - **Technology**: Spatial ATAC  
 - **Stages**: E12.5, E13.5, E14.5
 - **Coverage**: Forebrain regions
-Five datasets can be downloaded from https://pan.baidu.com/s/1mmMWKz-GaHqvjTQ-fZ1IZA?pwd=1234
+Seven datasets can be downloaded from https://pan.baidu.com/s/1mmMWKz-GaHqvjTQ-fZ1IZA?pwd=1234
