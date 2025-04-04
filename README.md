@@ -7,7 +7,6 @@ Vertical, Horizontal, and Mosaic Integration of Spatial Omics Data
 scanpy==1.9.6 <br />
 pytorch==1.12.0+cu11.3 <br />
 pytorch_geometric==2.4.0 <br />
-R==4.2.3 <br />
 mclust==5.4.10 <br />
 
 ## set up
@@ -19,8 +18,8 @@ cd DisConST-main
 ```
 Then, we suggest creating a new environment： <br />
 ```
-conda create -n disconst python=3.10 
-conda activate disconst
+conda create -n spatialmosi python=3.10 
+conda activate spatialmosi
 ```
 Additionally, install the packages required: <br />
 ```
