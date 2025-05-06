@@ -1,5 +1,6 @@
-We provide tutorials on four ways to integrate spatial omics:
-1. Mosaic integration of spatial omics data for omics matching.
-2. Mosaic integration of spatially mismatched omics data and missing omics imputation.
-3. Vertical integration of spatial omics data.
-4. Horizontal integration of spatial omics data.
+We provide tutorials on five ways to integrate spatial omics:
+1. Tutorial_MOSI: Mosaic integration of spatial omics data with matching omics (simulated data).
+2. Tutorial_uMOSI: Mosaic integration and missing omics imputation of spatial omics data with mismatched omics
+3. Tutorial_MSI: Vertical integration of spatial omics data.
+4. Tutorial_MOI: Horizontal integration of spatial omics data.
+5. Tutorial_triple: Horizontal integration of data with triple omics.
