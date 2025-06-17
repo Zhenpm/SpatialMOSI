@@ -21,24 +21,10 @@ import itertools
 import networkx as nx
 import hnswlib
 
-def create_csp_dict(adata, use_rep, batch_name, k = 50, save_on_disk = True, rough = True, show = 0, csp_groups = None):
-    """
-    Create a dictionary of cross-slice pairs (CSP) for batches in the dataset.
+def create_csp_dictionary(adata, use_rep, batch_name, k = 50, save_on_disk = True, rough = True, show = 0, csp_groups = None):
 
-    Parameters:
-    - adata: AnnData object containing the data.
-    - use_rep: Key in adata.obsm to use as the representation (e.g., 'omic').
-    - batch_name: Column name in adata.obs that contains batch information.
-    - k: Number of nearest neighbors to consider.
-    - save_on_disk: Whether to save the index on disk.
-    - rough: Whether to use csps roughSly.
-    - show: Whether to show the csps.
-    - csp_groups: List of CSP groups.
-
-    Returns:
-    - Dictionary of cross-slice pairs.
-    """
     cell_names = adata.obs_names
+
     batch_list = adata.obs[batch_name]
     datasets = []
     datasets_pcs = []
@@ -57,121 +43,79 @@ def create_csp_dict(adata, use_rep, batch_name, k = 50, save_on_disk = True, rou
         i = csp[0]
         j = csp[1]
         key_name1 = batch_name_df.loc[csp[0]].values[0] + "_" + batch_name_df.loc[csp[1]].values[0]
-        csps[key_name1] = {}
+        csps[key_name1] = {} # for multiple-slice setting, the key_names1 can avoid the csps replaced by previous slice-pair
         if(show > 0):
             print('Processing datasets {}'.format((i, j)))
 
-        que_data = list(cells[j])
-        ref_data = list(cells[i])
-        batch1_data = adata[que_data].obsm[use_rep]
-        batch2_data = adata[ref_data].obsm[use_rep]
+        que = list(cells[j])
+        ref = list(cells[i])
 
-
-        match = csp(ds1, ds2, que_data, ref_data, knn=k, save_on_disk = save_on_disk, approx = approx)
+        data_batch1 = adata[que].obsm[use_rep]
+        data_batch2 = adata[ref].obsm[use_rep]
+        cells1 = que
+        cells2 = ref
+        # if k>1，one point in data_batch1 may have multiple MNN points in data_batch2.
+        match = cspss(data_batch1, data_batch2, cells1, cells2, kcsps=k, save_on_disk = save_on_disk, rough = rough)
 
         G = nx.Graph()
         G.add_edges_from(match)
         node_names = np.array(G.nodes)
         anchors = list(node_names)
-        adjacency_matrix = nx.adjacency_matrix(G)
-        tmp = np.split(adjacency_matrix.indices, adjacency_matrix.indptr[1:-1])
+        adj = nx.adjacency_matrix(G)
+        tmp = np.split(adj.indices, adj.indptr[1:-1])
 
-        for anchor_index in range(0, len(anchors)):
-            key = anchors[anchor_index]
-            anchor_index = tmp[anchor_index]
-            names = list(node_names[anchor_index])
+        for i in range(0, len(anchors)):
+            key = anchors[i]
+            i = tmp[i]
+            names = list(node_names[i])
             csps[key_name1][key]= names
     return(csps)
 
-def csp_rough(batch1, batch2, cell1, cell2, kcsp=50):
-    """
-    Exact nearest neighbors using scikit-learn.
 
-    Parameters:
-    - batch1: batch 1.
-    - batch2: batch 2.
-    - cell1: cells in batch 1.
-    - cell2: cells in batch 2.
-    - kcsp: Number of csp to consider.
-
-    Returns:
-    - Set of matched pairs.
-    """
-    dim = batch2.shape[1]
-    num_elements = batch2.shape[0]
+def csp_approx(data_batch1, data_batch2, cells1, cells2, kcsps=50):
+    dim = data_batch2.shape[1]
+    num_elements = data_batch2.shape[0]
     p = hnswlib.Index(space='l2', dim=dim)
-    p.init_index(max_elements=num_elements, ef_construction=100, M=16)
+    p.init_index(max_elements=num_elements, ef_construction=100, M = 16)
     p.set_ef(10)
-    p.add_items(batch2)
-    ind, distances = p.knn_query(batch1, k=kcsp)
+    p.add_items(data_batch2)
+    ind,  distances = p.knn_query(data_batch1, k=kcsps)
     match = set()
-    for i, j in zip(range(batch1.shape[0]), ind):
-        for jj in j:
-            match.add((cell1[i], cell2[jj]))
+    for a, b in zip(range(data_batch1.shape[0]), ind):
+        for b_i in b:
+            match.add((cells1[a], cells2[b_i]))
     return match
 
 
-def csp_nn(batch1, batch2, cell1, cell2, kcsp=50, metric_p=2):
-    """
-    Exact nearest neighbors using scikit-learn.
+def cspnn(data_batch1, data_batch2, cells1, cells2, kcsps=50, metric_p=2):
+    # Find nearest neighbors of first dataset.
+    nn_ = NearestNeighbors(kcsps, p=metric_p)
+    nn_.fit(data_batch2)
+    ind = nn_.kneighbors(data_batch1, return_distance=False)
 
-    Parameters:
-    - batch1: batch 1.
-    - batch2: batch 2.
-    - cell1: cells in batch 1.
-    - cell2: cells in batch 2.
-    - kcsp: Number of nearest neighbors to consider.
-    - metric_p: Power parameter for the Minkowski metric.
-
-    Returns:
-    - Set of matched pairs.
-    """
-    nn_obj = NearestNeighbors(kcsp, p=metric_p)
-    nn_obj.fit(batch2)
-    ind = nn_obj.kneighbors(batch1, return_distance=False)
     match = set()
-    for i, j in zip(range(batch1.shape[0]), ind):
-        for jj in j:
-            match.add((cell1[i], cell2[jj]))
+    for a, b in zip(range(data_batch1.shape[0]), ind):
+        for b_i in b:
+            match.add((cells1[a], cells2[b_i]))
+
     return match
 
 
-def csp(batch1, batch2, cell1, cell2, kcsps=20, save_on_disk=True, rough=True):
+
+def cspss(data_batch1, data_batch2, cells1, cells2, kcsps = 20, save_on_disk = True, rough = True):
     if rough: 
         # Find nearest neighbors in first direction.
-        # output KNN point for each point in ds1.  match1 is a set(): (points in names1, points in names2), the size of the set is ds1.shape[0]*knn
-        match1 = csp_rough(batch1, batch2, cell1, cell2, kcsps=kcsp)#, save_on_disk = save_on_disk)
-        # Find nearest neighbors in second direction.nn_approx
-        match2 = csp_rough(ds2, ds1, cell1, cell2, kcsps=kcsp)#, save_on_disk = save_on_disk)
+        # output KNN point for each point in data_batch1.  match1 is a set(): (points in cells1, points in cells2), the size of the set is data_batch1.shape[0]*kcsps
+        match1 = csp_approx(data_batch1, data_batch2, cells1, cells2, kcsps=kcsps)#, save_on_disk = save_on_disk)
+        # Find nearest neighbors in second direction.
+        match2 = csp_approx(data_batch2, data_batch1, cells2, cells1, kcsps=kcsps)#, save_on_disk = save_on_disk)
     else:
-        match1 = csp_nn(batch1, batch2, cell1, cell2, kcsps=kcsp)
-        match2 = csp_nn(batch2, batch1, cell2, cell1, kcsps=kcsp)
+        match1 = cspnn(data_batch1, data_batch2, cells1, cells2, kcsps=kcsps)
+        match2 = cspnn(data_batch2, data_batch1, cells2, cells1, kcsps=kcsps)
     # Compute mutual nearest neighbors.
-    return match1 & set([(j, i) for i, j in match2])
+    mutual = match1 & set([ (b, a) for a, b in match2 ])
 
-def csp_nn(batch1, batch2, cell1, cell2, knn=50, metric_p=2):
-    """
-    Exact nearest neighbors using scikit-learn.
-
-    Parameters:
-    - batch1: batch 1.
-    - batch2: batch 2.
-    - cell1: cells in batch 1.
-    - cell2: cells in batch 2.
-    - knn: Number of nearest neighbors to consider.
-    - metric_p: Power parameter for the Minkowski metric.
-
-    Returns:
-    - Set of matched pairs.
-    """
-    nn_obj = NearestNeighbors(knn, p=metric_p)
-    nn_obj.fit(batch2)
-    ind = nn_obj.kneighbors(batch1, return_distance=False)
-    match = set()
-    for i, j in zip(range(batch1.shape[0]), ind):
-        for jj in j:
-            match.add((cell1[i], cell2[jj]))
-    return match
+    return mutual
 
 
 
@@ -416,4 +360,100 @@ def evaluate_metrics(matrix1, matrix2):
         "RMSE": rmse_result
     }
     return metrics
+def create_dictionary_mnn(adata, use_rep, batch_name, k = 50, save_on_disk = True, approx = True, verbose = 0, iter_comb = None):
+
+    cell_names = adata.obs_names
+
+    batch_list = adata.obs[batch_name]
+    datasets = []
+    datasets_pcs = []
+    cells = []
+    for i in batch_list.unique():
+        datasets.append(adata[batch_list == i])
+        datasets_pcs.append(adata[batch_list == i].obsm[use_rep])
+        cells.append(cell_names[batch_list == i])
+
+    batch_name_df = pd.DataFrame(np.array(batch_list.unique()))
+    mnns = dict()
+
+    if iter_comb is None:
+        iter_comb = list(itertools.combinations(range(len(cells)), 2))
+    for comb in iter_comb:
+        i = comb[0]
+        j = comb[1]
+        key_name1 = batch_name_df.loc[comb[0]].values[0] + "_" + batch_name_df.loc[comb[1]].values[0]
+        mnns[key_name1] = {} # for multiple-slice setting, the key_names1 can avoid the mnns replaced by previous slice-pair
+        if(verbose > 0):
+            print('Processing datasets {}'.format((i, j)))
+
+        new = list(cells[j])
+        ref = list(cells[i])
+
+        ds1 = adata[new].obsm[use_rep]
+        ds2 = adata[ref].obsm[use_rep]
+        names1 = new
+        names2 = ref
+        # if k>1，one point in ds1 may have multiple MNN points in ds2.
+        match = mnn(ds1, ds2, names1, names2, knn=k, save_on_disk = save_on_disk, approx = approx)
+
+        G = nx.Graph()
+        G.add_edges_from(match)
+        node_names = np.array(G.nodes)
+        anchors = list(node_names)
+        adj = nx.adjacency_matrix(G)
+        tmp = np.split(adj.indices, adj.indptr[1:-1])
+
+        for i in range(0, len(anchors)):
+            key = anchors[i]
+            i = tmp[i]
+            names = list(node_names[i])
+            mnns[key_name1][key]= names
+    return(mnns)
+
+
+
+def nn_approx(ds1, ds2, names1, names2, knn=50):
+    dim = ds2.shape[1]
+    num_elements = ds2.shape[0]
+    p = hnswlib.Index(space='l2', dim=dim)
+    p.init_index(max_elements=num_elements, ef_construction=100, M = 16)
+    p.set_ef(10)
+    p.add_items(ds2)
+    ind,  distances = p.knn_query(ds1, k=knn)
+    match = set()
+    for a, b in zip(range(ds1.shape[0]), ind):
+        for b_i in b:
+            match.add((names1[a], names2[b_i]))
+    return match
+
+
+def nn(ds1, ds2, names1, names2, knn=50, metric_p=2):
+    # Find nearest neighbors of first dataset.
+    nn_ = NearestNeighbors(knn, p=metric_p)
+    nn_.fit(ds2)
+    ind = nn_.kneighbors(ds1, return_distance=False)
+
+    match = set()
+    for a, b in zip(range(ds1.shape[0]), ind):
+        for b_i in b:
+            match.add((names1[a], names2[b_i]))
+
+    return match
+
+
+
+def mnn(ds1, ds2, names1, names2, knn = 20, save_on_disk = True, approx = True):
+    if approx: 
+        # Find nearest neighbors in first direction.
+        # output KNN point for each point in ds1.  match1 is a set(): (points in names1, points in names2), the size of the set is ds1.shape[0]*knn
+        match1 = nn_approx(ds1, ds2, names1, names2, knn=knn)#, save_on_disk = save_on_disk)
+        # Find nearest neighbors in second direction.
+        match2 = nn_approx(ds2, ds1, names2, names1, knn=knn)#, save_on_disk = save_on_disk)
+    else:
+        match1 = nn(ds1, ds2, names1, names2, knn=knn)
+        match2 = nn(ds2, ds1, names2, names1, knn=knn)
+    # Compute mutual nearest neighbors.
+    mutual = match1 & set([ (b, a) for a, b in match2 ])
+
+    return mutual
 
