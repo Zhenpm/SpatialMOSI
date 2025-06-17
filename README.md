@@ -13,8 +13,8 @@ mclust==5.4.10 <br />
 
 First clone the repository. 
 ```
-git clone https://github.com/Zhenpm/DisConST.git 
-cd DisConST-main
+git clone https://github.com/Zhenpm/SpatialMOSI.git 
+cd SpatialMOSI-main
 ```
 Then, we suggest creating a new environment： <br />
 ```
