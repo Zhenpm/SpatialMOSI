@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import scipy.sparse as sp
-from .utils import generate_csl_graph,create_dict_csps
-from .mnn_utils import create_dictionary_mnn
+from .utils import generate_csl_graph,create_dictionary_mnn
 from .SPATIALMOSI import Spatial_MOSI_att, Spatial_MOSI_triple, Spatial_MSI
 from torch import nn
 import torch
@@ -75,7 +74,7 @@ def train_SpatialMSI(adata,  chr = True, beta=0.5, lamda=1,
                 print('Update spot triplets at epoch ' + str(epoch))
             adata.obsm['omic'] = z.cpu().detach().numpy()
 
-            csp_dict = create_csp_dict(adata, use_rep='omic', batch_name='batch_name', k=k_csps,
+            csp_dict = create_dictionary_mnn(adata, use_rep='omic', batch_name='batch_name', k=k_csps,
                                                        csp_groups=csp_groups)
 
             anchor_ind = []
