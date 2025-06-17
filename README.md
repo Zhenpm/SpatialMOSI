@@ -66,4 +66,4 @@ We employed seven distinct spatial omics datasets to evaluate model performance:
 - **Technology**: Spatial ATAC  
 - **Stages**: E12.5, E13.5, E15.5
 - **Coverage**: Embryo sagittal sections <br />
-Seven datasets can be downloaded from https://pan.baidu.com/s/1mmMWKz-GaHqvjTQ-fZ1IZA?pwd=1234
+Seven datasets can be downloaded from https://pan.baidu.com/s/1P0uNuQEBTa8jjS5C3F5uDw?pwd=j168
